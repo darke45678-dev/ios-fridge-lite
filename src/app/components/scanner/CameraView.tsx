@@ -3,6 +3,7 @@ import { RefObject, useState, useEffect, useRef } from "react";
 import { Camera, Loader2, RefreshCw } from "lucide-react";
 import { useIngredients } from "../../services/IngredientContext";
 import { DetectionSummary } from "../inventory_management/DetectionSummary";
+import { notificationService } from "../../services/notificationService";
 
 // 使用 global 宣告來告訴 TypeScript 我們的 ort 在 window 上
 declare global {
@@ -143,15 +144,19 @@ export function CameraView({ videoRef }: CameraViewProps) {
             // NMS 模擬：只取最高信心度的結果
             const finalDetections = detections.sort((a, b) => b.confidence - a.confidence).slice(0, 3);
 
-            setCurrentBoxes(finalDetections);
-            finalDetections.forEach(det => addItem({
-                name: det.name,
-                quantity: 1,
-                category: det.category,
-                confidence: det.confidence,
-                isSpoiled: det.isSpoiled,
-                box: det.box
-            }));
+            if (finalDetections.length === 0) {
+                notificationService.send("掃描完成", "未偵測到任何食材，請靠近一點或調整角度重試。");
+            } else {
+                setCurrentBoxes(finalDetections);
+                finalDetections.forEach(det => addItem({
+                    name: det.name,
+                    quantity: 1,
+                    category: det.category,
+                    confidence: det.confidence,
+                    isSpoiled: det.isSpoiled,
+                    box: det.box
+                }));
+            }
 
         } catch (error) {
             console.warn("AI 核心運作異常:", error);
