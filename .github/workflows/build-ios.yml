@@ -20,8 +20,9 @@ jobs:
 
       - name: 🛠️ 通訊建構協議 (Install & Build)
         run: |
-          # 解決 Tailwind 4 零件衝突
+          # 完整清除 Windows 產生的快取，強制 Mac 環境重新安裝正確的原生零件
           rm -f package-lock.json
+          rm -rf node_modules
           npm install
           npm run build
 
