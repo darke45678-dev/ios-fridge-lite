@@ -77,6 +77,7 @@ export function CameraView({ videoRef }: CameraViewProps) {
         if (!videoRef.current || !sessionRef.current) return;
         setIsScanning(true);
         setCurrentBoxes([]);
+        clearTempDetections(); // 每次開始新掃描前，清空暫存清單，解決累加問題
 
         try {
             // 1. 擷取畫面並縮放至 640x640 (YOLO 標準尺寸)
