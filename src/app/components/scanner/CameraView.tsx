@@ -166,14 +166,35 @@ export function CameraView({ videoRef }: CameraViewProps) {
 
             console.log(`📊 解析完成。最高信心值: ${highestSeen.toFixed(4)}, 有效目標數: ${detections.length}`);
 
-            // NMS 模擬：只取最高信心度的結果
-            const finalDetections = detections.sort((a, b) => b.confidence - a.confidence).slice(0, 3);
+            // 5. 執行 NMS (Non-Maximum Suppression) 過濾重複重疊的框
+            const nmsDetections: any[] = [];
+            const sortedDetections = detections.sort((a, b) => b.confidence - a.confidence);
+            const IOU_THRESHOLD = 0.5;
 
-            if (finalDetections.length === 0) {
+            for (const det of sortedDetections) {
+                let keep = true;
+                for (const kept of nmsDetections) {
+                    const interX1 = Math.max(det.box[0], kept.box[0]);
+                    const interY1 = Math.max(det.box[1], kept.box[1]);
+                    const interX2 = Math.min(det.box[2], kept.box[2]);
+                    const interY2 = Math.min(det.box[3], kept.box[3]);
+                    const interArea = Math.max(0, interX2 - interX1) * Math.max(0, interY2 - interY1);
+                    const areaA = (det.box[2] - det.box[0]) * (det.box[3] - det.box[1]);
+                    const areaB = (kept.box[2] - kept.box[0]) * (kept.box[3] - kept.box[1]);
+                    const iou = interArea / (areaA + areaB - interArea);
+                    if (iou > IOU_THRESHOLD) { keep = false; break; }
+                }
+                if (keep) {
+                    nmsDetections.push(det);
+                    if (nmsDetections.length >= 10) break;
+                }
+            }
+
+            if (nmsDetections.length === 0) {
                 notificationService.send("掃描完成", "未偵測到任何食材，請靠近一點或調整角度重試。");
             } else {
-                setCurrentBoxes(finalDetections);
-                finalDetections.forEach(det => addItem({
+                setCurrentBoxes(nmsDetections);
+                nmsDetections.forEach(det => addItem({
                     name: det.name,
                     quantity: 1,
                     category: det.category,
