@@ -3,6 +3,7 @@ name: Build iOS IPA (Standalone)
 on:
   push:
     branches: [ main ]
+  workflow_dispatch:
 
 jobs:
   build:
@@ -19,6 +20,8 @@ jobs:
 
       - name: 🛠️ 通訊建構協議 (Install & Build)
         run: |
+          # 解決 Tailwind 4 零件衝突
+          rm -f package-lock.json
           npm install
           npm run build
 
@@ -28,7 +31,6 @@ jobs:
 
       - name: 🏗️ 啟動 Xcode 雲端編譯 (Build App)
         run: |
-          # 這裡執行編譯，並指定輸出路徑到 build 資料夾
           set -o pipefail
           xcodebuild -workspace ios/App/App.xcworkspace \
             -scheme App \
@@ -39,13 +41,10 @@ jobs:
             CODE_SIGNING_REQUIRED=NO \
             build
 
-      - name: 📦 打包成 .ipa 檔 (Windows 專用安裝格式)
+      - name: 📦 打包成 .ipa 檔 (Windows 專用)
         run: |
-          # 建立 Payload 資料夾，這是 ipa 檔案的標準格式
           mkdir -p Payload
-          # 將編譯好的 .app 複製進去
           cp -r build/Build/Products/Debug-iphoneos/App.app Payload/
-          # 壓縮成 .ipa
           zip -r KitchenAI.ipa Payload
           
       - name: 📁 上傳安裝資源 (Upload Artifact)
