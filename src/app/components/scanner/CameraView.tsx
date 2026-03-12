@@ -44,9 +44,9 @@ export function CameraView({ videoRef }: CameraViewProps) {
                     return;
                 }
 
-                // 從環境取得基礎路徑
+                // 從環境取得基礎路徑，並加入 Version Hash 避免瀏覽器快取舊權重
                 const baseUrl = import.meta.env.BASE_URL || "/";
-                const modelUrl = `${baseUrl}best.onnx`;
+                const modelUrl = `${baseUrl}best.onnx?v=${Date.now()}`;
                 
                 // 設定 ONNX Runtime WASM 零件經由 CDN 下載以確保版本一致與路徑正確
                 const cdnUrl = "https://cdn.jsdelivr.net/npm/onnxruntime-web@1.24.3/dist/";
