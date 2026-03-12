@@ -104,9 +104,13 @@ export function CameraView({ videoRef }: CameraViewProps) {
             const output = results[sessionRef.current.outputNames[0]].data as Float32Array;
 
             // 4. 解析輸出 (Post-processing - Simplified YOLOv8 parser)
-            // YOLOv8 輸出格式通常為 [1, 84, 8400] (box=4 + classes=80)
+            // YOLOv8 輸出格式通常為 [1, 16, 8400] (box=4 + classes=12)
             const detections: any[] = [];
             const CONF_THRESHOLD = settings.confidenceThreshold; // 使用系統設定的靈敏度
+            
+            console.log(`🧠 開始解析推理結果... 輸出長度: ${output.length}, 設定門檻: ${CONF_THRESHOLD}`);
+            let totalProcessed = 0;
+            let highestSeen = 0;
 
             // 這裡進行簡易的解碼演算法
             for (let i = 0; i < 8400; i++) {
@@ -121,6 +125,8 @@ export function CameraView({ videoRef }: CameraViewProps) {
                         classId = c;
                     }
                 }
+
+                if (maxConf > highestSeen) highestSeen = maxConf;
 
                 if (maxConf > CONF_THRESHOLD) {
                     const cx = output[i];
@@ -150,10 +156,12 @@ export function CameraView({ videoRef }: CameraViewProps) {
                         category: category
                     });
 
-                    // 為了範例流暢度，我們先只抓最高信心的一個
-                    if (detections.length > 5) break;
+                    // 增加偵測上限以利除錯
+                    if (detections.length > 50) break;
                 }
             }
+
+            console.log(`📊 解析完成。最高信心值: ${highestSeen.toFixed(4)}, 有效目標數: ${detections.length}`);
 
             // NMS 模擬：只取最高信心度的結果
             const finalDetections = detections.sort((a, b) => b.confidence - a.confidence).slice(0, 3);
