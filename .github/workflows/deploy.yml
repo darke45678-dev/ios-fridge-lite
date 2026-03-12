@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+  workflow_dispatch: # 加入手動觸發功能
 
 permissions:
   contents: read
